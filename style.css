@@ -6,7 +6,7 @@ body {
     padding: 20px;
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* 상단 정렬 */
+    align-items: flex-start;
     min-height: 100vh;
 }
 
@@ -82,14 +82,14 @@ h1, h2 {
     background-color: #f0f5ff;
     border-radius: 8px;
     padding: 10px;
-    min-height: 100px; /* 충분한 높이 확보 */
+    min-height: 100px;
     display: flex;
     flex-direction: column;
     cursor: pointer;
     transition: background-color 0.2s ease, transform 0.1s ease;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    position: relative; /* 상대 위치 지정 */
-    overflow: hidden; /* 내용이 넘칠 경우 숨김 */
+    position: relative;
+    overflow: hidden;
 }
 
 .calendar-cell:hover {
@@ -104,7 +104,7 @@ h1, h2 {
 }
 
 .calendar-cell.today {
-    border: 2px solid #FF5722; /* 오늘 날짜 강조 */
+    border: 2px solid #FF5722;
     box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.3);
 }
 
@@ -117,115 +117,32 @@ h1, h2 {
     padding-right: 5px;
 }
 
-.task-item {
-    font-size: 0.85em;
+.task-item-summary { /* 달력 셀 내에서 수행평가 요약 표시 */
+    font-size: 0.8em;
     color: #004085;
     background-color: #d1ecf1;
     border-left: 3px solid #004085;
-    padding: 4px 6px;
+    padding: 2px 4px;
     margin-top: 3px;
     border-radius: 3px;
-    word-break: break-word; /* 긴 텍스트 줄바꿈 */
+    word-break: break-word;
     line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.task-input-section, .task-list-section {
-    background-color: #f8faff;
-    padding: 25px;
-    border-radius: 10px;
-    margin-top: 30px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-#selectedDateDisplay {
-    font-weight: 700;
-    color: #007bff;
-    text-align: center;
-    margin-bottom: 15px;
-    font-size: 1.1em;
-}
-
-#taskInput {
-    width: calc(100% - 100px); /* 버튼 너비 고려 */
-    padding: 12px 15px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    font-size: 1em;
-    margin-right: 10px;
-    box-sizing: border-box; /* 패딩 포함 너비 계산 */
-}
-
-#addTaskButton {
-    background-color: #33cc66;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1em;
-    transition: background-color 0.2s ease;
-}
-
-#addTaskButton:hover {
-    background-color: #2da453;
-}
-
-#taskList {
-    list-style: none;
-    padding: 0;
-    margin-top: 20px;
-}
-
-#taskList li {
-    background-color: #e9f5ff;
-    border: 1px solid #cce5ff;
-    padding: 12px 18px;
-    margin-bottom: 10px;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 1.05em;
-}
-
-#taskList li .task-content {
-    flex-grow: 1;
-}
-
-#taskList li .task-date {
-    font-size: 0.9em;
-    color: #666;
-    margin-left: 15px;
-    white-space: nowrap; /* 줄바꿈 방지 */
-}
-
-#taskList li button {
-    background-color: #ff4d4d;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    padding: 6px 10px;
-    font-size: 0.9em;
-    cursor: pointer;
-    margin-left: 10px;
-    transition: background-color 0.2s ease;
-}
-
-#taskList li button:hover {
-    background-color: #cc0000;
-}
-
-/* D-Day 모달 스타일 */
+/* 모달 스타일 */
 .modal {
-    display: none; /* 기본적으로 숨김 */
-    position: fixed; /* 화면에 고정 */
-    z-index: 1000; /* 다른 요소 위에 표시 */
+    display: none;
+    position: fixed;
+    z-index: 1000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto; /* 내용이 넘칠 경우 스크롤 */
-    background-color: rgba(0, 0, 0, 0.4); /* 반투명 배경 */
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
     justify-content: center;
     align-items: center;
 }
@@ -236,10 +153,10 @@ h1, h2 {
     padding: 30px;
     border-radius: 12px;
     width: 80%;
-    max-width: 400px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
     position: relative;
-    text-align: center;
+    box-sizing: border-box;
 }
 
 .close-button {
@@ -260,71 +177,151 @@ h1, h2 {
     cursor: pointer;
 }
 
-#modalTaskDate {
-    font-size: 1.1em;
-    color: #666;
-    margin-bottom: 10px;
-}
-
-#modalTaskContent {
+#modalDateDisplay {
     font-size: 1.4em;
-    font-weight: 700;
     color: #3366ff;
-    margin-bottom: 15px;
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 700;
 }
 
-#modalDday {
-    font-size: 1.8em;
-    font-weight: 900;
+.modal-input-section {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#modalTaskInput {
+    flex-grow: 1;
+    padding: 10px 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1em;
+}
+
+#modalAddTaskButton {
+    background-color: #33cc66;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s ease;
+}
+
+#modalAddTaskButton:hover {
+    background-color: #2da453;
+}
+
+#modalTaskList {
+    list-style: none;
+    padding: 0;
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #f8faff;
+}
+
+#modalTaskList li {
+    background-color: #e9f5ff;
+    border: 1px solid #cce5ff;
+    padding: 10px 15px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95em;
+}
+
+#modalTaskList li:last-child {
+    margin-bottom: 0;
+}
+
+#modalTaskList li .task-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+#modalTaskList li .task-dday {
+    font-size: 0.85em;
     color: #ff4d4d;
+    font-weight: 700;
+    margin-top: 3px;
+}
+
+#modalTaskList li button {
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 6px 10px;
+    font-size: 0.9em;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: background-color 0.2s ease;
+}
+
+#modalTaskList li button:hover {
+    background-color: #cc0000;
 }
 
 /* 모바일 반응형 */
 @media (max-width: 768px) {
     .container {
-        padding: 20px;
+        padding: 15px;
     }
 
     .calendar-header button {
-        width: 32px;
-        height: 32px;
-        font-size: 18px;
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
     }
 
     #currentMonthYear {
-        font-size: 1.5em;
+        font-size: 1.4em;
     }
 
     .calendar-grid {
-        gap: 5px;
+        gap: 4px;
     }
 
     .calendar-cell {
-        min-height: 80px;
-        padding: 8px;
+        min-height: 70px;
+        padding: 6px;
     }
 
     .day-number {
         font-size: 1em;
     }
 
-    #taskInput {
-        width: calc(100% - 80px);
-        margin-right: 5px;
+    .modal-content {
+        width: 90%;
+        padding: 20px;
     }
 
-    #addTaskButton {
-        padding: 10px 15px;
+    .modal-input-section {
+        flex-direction: column;
+        gap: 8px;
     }
 
-    #taskList li {
+    #modalTaskInput, #modalAddTaskButton {
+        width: 100%;
+        margin-right: 0;
+    }
+
+    #modalTaskList li {
         flex-direction: column;
         align-items: flex-start;
-        padding: 10px 15px;
+        padding: 8px 12px;
     }
 
-    #taskList li .task-date {
-        margin-top: 5px;
+    #modalTaskList li button {
         margin-left: 0;
+        margin-top: 8px;
     }
 }

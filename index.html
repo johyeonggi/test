@@ -26,27 +26,18 @@
             <div class="day-name">금</div>
             <div class="day-name">토</div>
             </div>
-
-        <div class="task-input-section">
-            <h2>수행평가 입력</h2>
-            <p id="selectedDateDisplay">날짜를 선택해주세요.</p>
-            <input type="text" id="taskInput" placeholder="수행평가 내용을 입력하세요">
-            <button id="addTaskButton">추가</button>
-        </div>
-
-        <div class="task-list-section">
-            <h2>내 수행평가</h2>
-            <ul id="taskList">
-                </ul>
-        </div>
     </div>
 
-    <div id="ddayModal" class="modal">
+    <div id="taskModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
-            <h3 id="modalTaskDate"></h3>
-            <p id="modalTaskContent"></p>
-            <p id="modalDday"></p>
+            <h3 id="modalDateDisplay"></h3>
+            <div class="modal-input-section">
+                <input type="text" id="modalTaskInput" placeholder="수행평가 내용을 입력하세요">
+                <button id="modalAddTaskButton">추가</button>
+            </div>
+            <ul id="modalTaskList">
+                </ul>
         </div>
     </div>
 

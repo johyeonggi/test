@@ -3,25 +3,25 @@ const calendarGrid = document.getElementById('calendarGrid');
 const currentMonthYear = document.getElementById('currentMonthYear');
 const prevMonthBtn = document.getElementById('prevMonth');
 const nextMonthBtn = document.getElementById('nextMonth');
-const selectedDateDisplay = document.getElementById('selectedDateDisplay');
-const taskInput = document.getElementById('taskInput');
-const addTaskButton = document.getElementById('addTaskButton');
-const taskList = document.getElementById('taskList');
-const ddayModal = document.getElementById('ddayModal');
+
+// 모달 관련 요소
+const taskModal = document.getElementById('taskModal');
 const closeButton = document.querySelector('.close-button');
-const modalTaskDate = document.getElementById('modalTaskDate');
-const modalTaskContent = document.getElementById('modalTaskContent');
-const modalDday = document.getElementById('modalDday');
+const modalDateDisplay = document.getElementById('modalDateDisplay');
+const modalTaskInput = document.getElementById('modalTaskInput');
+const modalAddTaskButton = document.getElementById('modalAddTaskButton');
+const modalTaskList = document.getElementById('modalTaskList');
 
 let currentDate = new Date(); // 현재 날짜 (캘린더의 기준)
-let selectedDate = null; // 사용자가 선택한 날짜
+let selectedDateForModal = null; // 모달에서 현재 관리하는 날짜
 
-// 로컬 스토리지에서 수행평가 데이터 로드 (JSON.parse 실패 시 빈 객체 반환)
+// 로컬 스토리지에서 수행평가 데이터 로드
 // { "YYYY-MM-DD": [{id: ..., content: ...}, ...], ... }
 const assignments = JSON.parse(localStorage.getItem('assignments')) || {};
 
 // 캘린더 생성 함수
 function renderCalendar() {
+    // 요일 헤더 초기화 및 추가
     calendarGrid.innerHTML = `
         <div class="day-name">일</div>
         <div class="day-name">월</div>
@@ -30,7 +30,7 @@ function renderCalendar() {
         <div class="day-name">목</div>
         <div class="day-name">금</div>
         <div class="day-name">토</div>
-    `; // 요일 헤더 초기화
+    `;
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth(); // 0부터 시작 (0: 1월, 11: 12월)
@@ -39,7 +39,7 @@ function renderCalendar() {
 
     // 해당 월의 첫째 날과 마지막 날
     const firstDayOfMonth = new Date(year, month, 1);
-    const lastDayOfMonth = new Date(year, month + 1, 0); // 다음 달의 0번째 날 = 이번 달의 마지막 날
+    const lastDayOfMonth = new Date(year, month + 1, 0);
     const daysInMonth = lastDayOfMonth.getDate();
 
     // 첫째 날의 요일 (0: 일요일, 1: 월요일, ..., 6: 토요일)
@@ -71,22 +71,17 @@ function renderCalendar() {
             cell.classList.add('today');
         }
 
-        // 선택된 날짜 표시
-        if (selectedDate && isSameDay(date, selectedDate)) {
-            cell.classList.add('selected');
-        }
-
-        // 해당 날짜에 수행평가가 있는지 확인하고 표시
+        // 해당 날짜에 수행평가가 있는지 확인하고 첫 번째 항목을 요약해서 표시
         if (assignments[dateString] && assignments[dateString].length > 0) {
-            assignments[dateString].forEach(task => {
-                const taskDiv = document.createElement('div');
-                taskDiv.classList.add('task-item');
-                taskDiv.textContent = task.content;
-                cell.appendChild(taskDiv);
-            });
+            const firstTask = assignments[dateString][0];
+            const taskSummaryDiv = document.createElement('div');
+            taskSummaryDiv.classList.add('task-item-summary');
+            taskSummaryDiv.textContent = firstTask.content; // 첫 번째 수행평가만 요약 표시
+            cell.appendChild(taskSummaryDiv);
         }
 
-        cell.addEventListener('click', () => selectDate(date));
+        // 날짜 셀 클릭 시 모달 열기
+        cell.addEventListener('click', () => openTaskModal(date));
         calendarGrid.appendChild(cell);
     }
 }
@@ -106,43 +101,91 @@ function isSameDay(date1, date2) {
            date1.getDate() === date2.getDate();
 }
 
-// 날짜 선택 함수
-function selectDate(date) {
-    // 이전에 선택된 셀에서 'selected' 클래스 제거
-    if (selectedDate) {
-        const prevSelectedCell = document.querySelector(`.calendar-cell[data-date="${formatDate(selectedDate)}"]`);
-        if (prevSelectedCell) {
-            prevSelectedCell.classList.remove('selected');
-        }
-    }
-
-    selectedDate = date;
-    const selectedDateString = formatDate(selectedDate);
-    selectedDateDisplay.textContent = `${selectedDateString} 선택됨`;
-
-    // 새로 선택된 셀에 'selected' 클래스 추가
-    const newSelectedCell = document.querySelector(`.calendar-cell[data-date="${selectedDateString}"]`);
-    if (newSelectedCell) {
-        newSelectedCell.classList.add('selected');
-    }
-
-    renderTaskList(); // 선택된 날짜의 수행평가 목록 갱신
+// 수행평가 모달 열기
+function openTaskModal(date) {
+    selectedDateForModal = date; // 모달에서 사용할 날짜 설정
+    const dateString = formatDate(selectedDateForModal);
+    modalDateDisplay.textContent = `${dateString} 수행평가`;
+    modalTaskInput.value = ''; // 입력창 초기화
+    renderModalTaskList(dateString); // 해당 날짜의 수행평가 목록 렌더링
+    taskModal.style.display = 'flex'; // 모달 표시
 }
 
-// 수행평가 추가 함수
-function addTask() {
-    if (!selectedDate) {
-        alert('날짜를 먼저 선택해주세요!');
+// 모달 내에서 수행평가 목록 렌더링
+function renderModalTaskList(dateString) {
+    modalTaskList.innerHTML = ''; // 목록 초기화
+
+    const tasksForDate = assignments[dateString] || [];
+
+    if (tasksForDate.length === 0) {
+        const noTaskItem = document.createElement('li');
+        noTaskItem.textContent = '등록된 수행평가가 없습니다.';
+        modalTaskList.appendChild(noTaskItem);
         return;
     }
 
-    const taskContent = taskInput.value.trim();
+    tasksForDate.forEach(task => {
+        const listItem = document.createElement('li');
+        listItem.dataset.id = task.id;
+
+        const contentWrapper = document.createElement('div');
+        contentWrapper.classList.add('task-content-wrapper');
+
+        const taskContentSpan = document.createElement('span');
+        taskContentSpan.textContent = task.content;
+        contentWrapper.appendChild(taskContentSpan);
+
+        const ddaySpan = document.createElement('span');
+        ddaySpan.classList.add('task-dday');
+        ddaySpan.textContent = calculateDday(new Date(dateString));
+        contentWrapper.appendChild(ddaySpan);
+
+        listItem.appendChild(contentWrapper);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '삭제';
+        deleteBtn.addEventListener('click', () => deleteTask(dateString, task.id));
+        listItem.appendChild(deleteBtn);
+
+        modalTaskList.appendChild(listItem);
+    });
+}
+
+// D-Day 계산 함수
+function calculateDday(targetDate) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // 오늘 날짜의 자정으로 설정
+
+    const target = new Date(targetDate);
+    target.setHours(0, 0, 0, 0); // 목표 날짜의 자정으로 설정
+
+    const diffTime = target.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 0) {
+        return `D-${diffDays}`;
+    } else if (diffDays === 0) {
+        return `D-Day!`;
+    } else {
+        return `D+${Math.abs(diffDays)}`;
+    }
+}
+
+
+// 모달 내에서 수행평가 추가 함수
+function addTaskInModal() {
+    if (!selectedDateForModal) {
+        alert('날짜가 선택되지 않았습니다.');
+        return;
+    }
+
+    const taskContent = modalTaskInput.value.trim();
     if (taskContent === '') {
         alert('수행평가 내용을 입력해주세요!');
         return;
     }
 
-    const dateString = formatDate(selectedDate);
+    const dateString = formatDate(selectedDateForModal);
     if (!assignments[dateString]) {
         assignments[dateString] = [];
     }
@@ -155,114 +198,33 @@ function addTask() {
 
     localStorage.setItem('assignments', JSON.stringify(assignments)); // 로컬 스토리지에 저장
 
-    taskInput.value = ''; // 입력창 초기화
+    modalTaskInput.value = ''; // 입력창 초기화
+    renderModalTaskList(dateString); // 모달 목록 갱신
     renderCalendar(); // 캘린더 다시 그려서 셀에 수행평가 표시
-    renderTaskList(); // 목록 갱신
-}
-
-// 수행평가 목록 렌더링 함수
-function renderTaskList() {
-    taskList.innerHTML = ''; // 목록 초기화
-
-    // 모든 수행평가를 날짜 기준으로 정렬
-    const allAssignments = [];
-    for (const dateString in assignments) {
-        assignments[dateString].forEach(task => {
-            allAssignments.push({
-                date: new Date(dateString),
-                content: task.content,
-                id: task.id
-            });
-        });
-    }
-
-    // 날짜 오름차순으로 정렬
-    allAssignments.sort((a, b) => a.date - b.date);
-
-    if (allAssignments.length === 0) {
-        const noTaskItem = document.createElement('li');
-        noTaskItem.textContent = '등록된 수행평가가 없습니다.';
-        taskList.appendChild(noTaskItem);
-        return;
-    }
-
-    allAssignments.forEach(item => {
-        const listItem = document.createElement('li');
-        listItem.dataset.date = formatDate(item.date);
-        listItem.dataset.id = item.id;
-
-        const taskContentDiv = document.createElement('div');
-        taskContentDiv.classList.add('task-content');
-        taskContentDiv.textContent = item.content;
-        listItem.appendChild(taskContentDiv);
-
-        const taskDateSpan = document.createElement('span');
-        taskDateSpan.classList.add('task-date');
-        taskDateSpan.textContent = formatDate(item.date);
-        listItem.appendChild(taskDateSpan);
-
-        const ddayBtn = document.createElement('button');
-        ddayBtn.textContent = 'D-Day';
-        ddayBtn.addEventListener('click', () => showDdayModal(item.date, item.content));
-        listItem.appendChild(ddayBtn);
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = '삭제';
-        deleteBtn.addEventListener('click', () => deleteTask(item.date, item.id));
-        listItem.appendChild(deleteBtn);
-
-        taskList.appendChild(listItem);
-    });
 }
 
 // 수행평가 삭제 함수
-function deleteTask(date, id) {
-    const dateString = formatDate(date);
+function deleteTask(dateString, id) {
     if (assignments[dateString]) {
         assignments[dateString] = assignments[dateString].filter(task => task.id !== id);
         if (assignments[dateString].length === 0) {
             delete assignments[dateString]; // 해당 날짜에 더 이상 수행평가가 없으면 키 삭제
         }
         localStorage.setItem('assignments', JSON.stringify(assignments));
+        renderModalTaskList(dateString); // 모달 목록 갱신
         renderCalendar(); // 캘린더 다시 그려서 셀에서 수행평가 표시 제거
-        renderTaskList(); // 목록 갱신
     }
-}
-
-// D-Day 계산 및 모달 표시
-function showDdayModal(taskDate, taskContent) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // 오늘 날짜의 자정으로 설정
-
-    const targetDate = new Date(taskDate);
-    targetDate.setHours(0, 0, 0, 0); // 목표 날짜의 자정으로 설정
-
-    const diffTime = targetDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // 밀리초를 일로 변환, 올림
-
-    modalTaskDate.textContent = `날짜: ${formatDate(taskDate)}`;
-    modalTaskContent.textContent = `내용: ${taskContent}`;
-
-    if (diffDays > 0) {
-        modalDday.textContent = `D-${diffDays}`;
-    } else if (diffDays === 0) {
-        modalDday.textContent = `D-Day!`;
-    } else {
-        modalDday.textContent = `D+${Math.abs(diffDays)}`;
-    }
-
-    ddayModal.style.display = 'flex'; // 모달 표시
 }
 
 // 모달 닫기
 closeButton.addEventListener('click', () => {
-    ddayModal.style.display = 'none';
+    taskModal.style.display = 'none';
 });
 
 // 모달 외부 클릭 시 닫기
 window.addEventListener('click', (event) => {
-    if (event.target === ddayModal) {
-        ddayModal.style.display = 'none';
+    if (event.target === taskModal) {
+        taskModal.style.display = 'none';
     }
 });
 
@@ -278,17 +240,15 @@ nextMonthBtn.addEventListener('click', () => {
     renderCalendar();
 });
 
-addTaskButton.addEventListener('click', addTask);
-taskInput.addEventListener('keypress', (e) => {
+modalAddTaskButton.addEventListener('click', addTaskInModal);
+modalTaskInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
-        addTask();
+        addTaskInModal();
     }
 });
 
 // 초기 렌더링
+// 2025년 1월부터 달력을 표시하도록 설정
+currentDate.setFullYear(2025);
+currentDate.setMonth(0); // 1월
 renderCalendar();
-renderTaskList();
-// 현재 날짜로 초기 선택 (선택된 날짜가 없을 경우)
-if (!selectedDate) {
-    selectDate(new Date());
-}
